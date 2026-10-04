@@ -1,11 +1,12 @@
 /*
     Knight-Game
-    version: kg-17041026
+    version: kg-00051026
 */
 
 #include <raylib.h>
 
 int main() {
+    Vector2 knight_pos = {0.0f, 0.0f};
     SetConfigFlags(FLAG_VSYNC_HINT);
     InitWindow(1280, 720, "Base window");
     Image window_icon = LoadImage("icon.png");
@@ -15,7 +16,13 @@ int main() {
     while (!WindowShouldClose()) {
         BeginDrawing();
             ClearBackground(WHITE);
-            DrawTexture(icon_tex, 0, 0, WHITE);
+            if (IsKeyDown(KEY_RIGHT)) {
+                knight_pos.x += 7.5;
+            } 
+            if (IsKeyDown(KEY_LEFT)) {
+                knight_pos.x -= 7.5;
+            }
+            DrawTexture(icon_tex, knight_pos.x, knight_pos.y, WHITE);
         EndDrawing();
     }
 
