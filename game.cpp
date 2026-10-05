@@ -1,27 +1,49 @@
 /*
     Knight-Game
-    version: kg-18051026
+    version: kg-01061026
 */
 
 #include <raylib.h>
 #include <algorithm>
+#include <vector>
+#include <map>
+#include <string>
 
-class Character {
+
+class Object {
+protected:
+    Rectangle hitbox; 
+    Vector2 position;
+    Vector2 hitbox_offset;
+    Texture2D image;
+    Object(Vector2 tex_pos, Vector2 pos, Vector2 size, Texture2D tex) {
+        hitbox = {pos.x, pos.y, size.x, size.y};
+        position = tex_pos;
+        image = tex;
+        hitbox_offset.x = pos.x - tex_pos.x;
+        hitbox_offset.y = pos.y - tex_pos.y;
+    }
+public:
+    virtual ~Object() = default;
+    virtual void draw() = 0;
+    virtual void draw_hitbox() = 0;
+};
+
+class Character : public Object {
 protected:
     int HP;
     int damage;
     const float max_speed;
     float speed;
     float a; //Ускорение
-    Vector2 position;
 
-    Character(int HP_, int damage_, float max_speed_, float speed_, float a_, Vector2 postion_) 
-        : HP(HP_), 
-        damage(damage_), 
-        max_speed(max_speed_),
-        speed(speed_),
-        a(a_),
-        position(postion_) {}
+    Character(Vector2 tex_pos, Vector2 pos, Vector2 size, Texture2D tex, int HP_, int damage_, float max_speed_, float speed_, float a_) 
+        : Object(tex_pos, pos, size, tex), 
+          HP(HP_), 
+          damage(damage_), 
+          max_speed(max_speed_),
+          speed(speed_),
+          a(a_) {}
 
 public:
     virtual ~Character() = default;
@@ -33,7 +55,8 @@ public:
 
 class Knight : public Character {
 public:
-    Knight(int HP_, int damage_, float max_speed_, float speed_, float a_, Vector2 postion_) : Character(HP_, damage_, max_speed_, speed_, a_, postion_) {}
+    Knight(Vector2 tex_pos, Vector2 pos, Vector2 size, Texture2D tex, int HP_, int damage_, float max_speed_, float speed_, float a_) 
+        : Character(tex_pos, pos, size, tex, HP_, damage_, max_speed_, speed_, a_) {}
 
     void move() override {
         if (IsKeyDown(KEY_RIGHT)) {
@@ -58,23 +81,44 @@ public:
             }
         }
         position.x += speed;
+        hitbox.x = position.x + hitbox_offset.x;
+        hitbox.y = position.y + hitbox_offset.y;
+    }
+
+    void draw() override {
+        DrawTexture(image, position.x, position.y, WHITE);
+    }
+    void draw_hitbox() override {
+        DrawRectangleLines(hitbox.x, hitbox.y, hitbox.width, hitbox.height, RED);
     }
 };
 
 int main() {
-    SetConfigFlags(FLAG_VSYNC_HINT);
+    SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "Base window");
     Image window_icon = LoadImage("icon.png");
     SetWindowIcon(window_icon);
+    
+    Camera2D camera = { 0 };
+    camera.target = { 0.0f, 0.0f }; // Камера смотрит в начало координат (или на игрока)
+    camera.offset = { 0.0f, 0.0f }; // Смещение камеры относительно экрана
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f; 
+    const float targetRenderHeight = 720.0f;
     Texture2D icon_tex = LoadTextureFromImage(window_icon);
+    SetTextureFilter(icon_tex, TEXTURE_FILTER_POINT);
 
-    Knight knight(100, 10, 10.0, 0.0, 1.0, {0.0f, 0.0f});
+    Knight knight({0.0, 0.0f}, {3.0f * 16.0f, 0.0f}, {10.0f * 16.0f, 23.0f * 16.0f}, icon_tex, 100, 10, 10.0, 0.0, 1.0);
 
     while (!WindowShouldClose()) {
+        camera.zoom = (float)GetScreenHeight() / targetRenderHeight;
         BeginDrawing();
             ClearBackground(WHITE);
             knight.move();
-            DrawTextureV(icon_tex, knight.get_pos(), WHITE);
+            BeginMode2D(camera);
+                knight.draw();
+                knight.draw_hitbox();
+            EndMode2D();
         EndDrawing();
     }
 
