@@ -95,8 +95,11 @@ public:
 int main() {
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(1280, 720, "Base window");
-    Image window_icon = LoadImage("icon.png");
-    SetWindowIcon(window_icon);
+    Image window_icon24 = LoadImage("Window_icons/24.png");
+    Image window_icon48 = LoadImage("Window_icons/48.png");
+    Image window_icon96 = LoadImage("Window_icons/96.png");
+    Image icons[3] = {window_icon24, window_icon48, window_icon96};
+    SetWindowIcons(icons, 3);
     
     Camera2D camera = { 0 };
     camera.target = { 0.0f, 0.0f }; // Камера смотрит в начало координат (или на игрока)
@@ -104,7 +107,7 @@ int main() {
     camera.rotation = 0.0f;
     camera.zoom = 1.0f; 
     const float targetRenderHeight = 720.0f;
-    Texture2D icon_tex = LoadTextureFromImage(window_icon);
+    Texture2D icon_tex = LoadTexture("knight-for-tests.png");
     SetTextureFilter(icon_tex, TEXTURE_FILTER_POINT);
 
     Knight knight({2.0f, 2.0f}, {3.0f, 0.0f}, {10.0f, 23.0f}, icon_tex, 100, 10, 10.0, 0.0, 1.0);

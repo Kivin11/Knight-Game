@@ -1,6 +1,6 @@
 {
     "code-runner.executorMap": {
-        "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt -lraylib -lopengl32 -lgdi32 -lwinmm -mwindows && $dir$fileNameWithoutExt"
+        "cpp": "cd $dir && g++ $fileName resource.res -o $fileNameWithoutExt -lraylib -lopengl32 -lgdi32 -lwinmm -mwindows && $dir$fileNameWithoutExt"
     }
 }
 //-mwindows
