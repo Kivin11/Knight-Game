@@ -12,21 +12,19 @@
 
 class Object {
 protected:
-    Rectangle hitbox; 
-    Vector2 position;
-    Vector2 hitbox_offset;
+    Rectangle pushbox; //Хитбокс персонажа
+    Vector2 position; //позиция персонажа (левый верхний угол картинки)
     Texture2D image;
-    Object(Vector2 tex_pos, Vector2 pos, Vector2 size, Texture2D tex) {
-        hitbox = {pos.x, pos.y, size.x, size.y};
-        position = tex_pos;
+    Object(Vector2 tex_pos, Vector2 push_pos, Vector2 push_size, Texture2D tex) {
+        pushbox = {push_pos.x * 16.0f, push_pos.y * 16.0f, push_size.x * 16.0f, push_size.y * 16.0f};
+        position = {tex_pos.x * 16.0f, tex_pos.y * 16.0f};
         image = tex;
-        hitbox_offset.x = pos.x - tex_pos.x;
-        hitbox_offset.y = pos.y - tex_pos.y;
     }
 public:
     virtual ~Object() = default;
     virtual void draw() = 0;
-    virtual void draw_hitbox() = 0;
+    virtual void draw_pushbox() = 0;
+    virtual Rectangle get_current_pushbox() = 0;
 };
 
 class Character : public Object {
@@ -81,15 +79,16 @@ public:
             }
         }
         position.x += speed;
-        hitbox.x = position.x + hitbox_offset.x;
-        hitbox.y = position.y + hitbox_offset.y;
     }
 
     void draw() override {
         DrawTexture(image, position.x, position.y, WHITE);
     }
-    void draw_hitbox() override {
-        DrawRectangleLines(hitbox.x, hitbox.y, hitbox.width, hitbox.height, RED);
+    void draw_pushbox() override {
+        DrawRectangleLinesEx(get_current_pushbox(), 1, RED);
+    }
+    Rectangle get_current_pushbox() override {
+        return {pushbox.x + position.x, pushbox.y + position.y, pushbox.width, pushbox.height};
     }
 };
 
@@ -108,7 +107,7 @@ int main() {
     Texture2D icon_tex = LoadTextureFromImage(window_icon);
     SetTextureFilter(icon_tex, TEXTURE_FILTER_POINT);
 
-    Knight knight({0.0, 0.0f}, {3.0f * 16.0f, 0.0f}, {10.0f * 16.0f, 23.0f * 16.0f}, icon_tex, 100, 10, 10.0, 0.0, 1.0);
+    Knight knight({2.0f, 2.0f}, {3.0f, 0.0f}, {10.0f, 23.0f}, icon_tex, 100, 10, 10.0, 0.0, 1.0);
 
     while (!WindowShouldClose()) {
         camera.zoom = (float)GetScreenHeight() / targetRenderHeight;
@@ -117,7 +116,7 @@ int main() {
             knight.move();
             BeginMode2D(camera);
                 knight.draw();
-                knight.draw_hitbox();
+                knight.draw_pushbox();
             EndMode2D();
         EndDrawing();
     }
