@@ -1,6 +1,6 @@
 /*
     Knight-Game
-    version: kg-01061026
+    version: kg-23151026
 */
 
 #include <raylib.h>
@@ -10,41 +10,33 @@
 #include <string>
 
 
-class Object {
+class Character {
 protected:
-    Rectangle pushbox; //Хитбокс персонажа
+    Rectangle pushbox; //Хитбокс персонажа (относительно позиции игрока)
     Vector2 position; //позиция персонажа (левый верхний угол картинки)
     Texture2D image;
-    Object(Vector2 tex_pos, Vector2 push_pos, Vector2 push_size, Texture2D tex) {
-        pushbox = {push_pos.x * 16.0f, push_pos.y * 16.0f, push_size.x * 16.0f, push_size.y * 16.0f};
-        position = {tex_pos.x * 16.0f, tex_pos.y * 16.0f};
-        image = tex;
-    }
-public:
-    virtual ~Object() = default;
-    virtual void draw() = 0;
-    virtual void draw_pushbox() = 0;
-    virtual Rectangle get_current_pushbox() = 0;
-};
-
-class Character : public Object {
-protected:
     int HP;
     int damage;
-    const float max_speed;
+    float max_speed;
     float speed;
     float a; //Ускорение
 
-    Character(Vector2 tex_pos, Vector2 pos, Vector2 size, Texture2D tex, int HP_, int damage_, float max_speed_, float speed_, float a_) 
-        : Object(tex_pos, pos, size, tex), 
-          HP(HP_), 
-          damage(damage_), 
-          max_speed(max_speed_),
-          speed(speed_),
-          a(a_) {}
+    Character(Vector2 tex_pos, Vector2 push_pos, Vector2 push_size, Texture2D tex, int HP_, int damage_, float max_speed_, float speed_, float a_) {
+        pushbox = {push_pos.x, push_pos.y, push_size.x, push_size.y};
+        position = {tex_pos.x, tex_pos.y};
+        image = tex;
+        HP = HP_;
+        damage = damage_;
+        max_speed = max_speed_;
+        speed = speed_;
+        a = a_;
+    }
 
 public:
     virtual ~Character() = default;
+    virtual void draw() = 0;
+    virtual void draw_pushbox() = 0;
+    virtual Rectangle get_current_pushbox() = 0;
     virtual void move() = 0;
     virtual Vector2 get_pos() const {
         return position;
@@ -106,13 +98,14 @@ int main() {
     camera.offset = { 0.0f, 0.0f }; // Смещение камеры относительно экрана
     camera.rotation = 0.0f;
     camera.zoom = 1.0f; 
-    const float targetRenderHeight = 720.0f;
+    const float targetRenderHeight = 80.0f;
     Texture2D icon_tex = LoadTexture("knight-for-tests.png");
     SetTextureFilter(icon_tex, TEXTURE_FILTER_POINT);
 
     Knight knight({2.0f, 2.0f}, {3.0f, 0.0f}, {10.0f, 23.0f}, icon_tex, 100, 10, 10.0, 0.0, 1.0);
 
     while (!WindowShouldClose()) {
+        float deltaTime = GetFrameTime();
         camera.zoom = (float)GetScreenHeight() / targetRenderHeight;
         BeginDrawing();
             ClearBackground(WHITE);
