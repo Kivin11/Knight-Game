@@ -7,7 +7,11 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <cstring>
 #include <string>
+#include <fstream>
+#include <cstdint>
+#include "level_generated.h"
 
 
 class Character {
@@ -81,6 +85,80 @@ public:
     }
     Rectangle get_current_pushbox() override {
         return {pushbox.x + position.x, pushbox.y + position.y, pushbox.width, pushbox.height};
+    }
+};
+
+
+struct Block {
+    uint16_t id;
+    uint16_t index;
+    // Удобный маркер, проверяющий, есть ли у блока сложные данные
+    bool has_complex_data() const {
+        return index != 0xFFFF; 
+    }
+};
+
+struct Map {
+    uint16_t width;
+    uint16_t height;
+    std::vector<Block> map;
+    std::vector<std::vector<int32_t>> blocks_data; 
+};
+
+class Level {
+private:
+    std::vector<Map> maps;
+
+public:
+    // 2. ФУНКЦИЯ ЗАГРУЗКИ УРОВНЯ
+    bool load_from_file(const std::string& filename) {
+        std::ifstream infile(filename, std::ios::binary | std::ios::ate);
+        if (!infile) return false;
+
+        std::streamsize size = infile.tellg();
+        infile.seekg(0, std::ios::beg);
+        
+        if (size < 2) return false;
+
+        std::vector<char> buffer(size);
+        if (!infile.read(buffer.data(), size)) return false;
+
+        // Проверка сигнатуры файла
+        if (buffer[0] != 75 || buffer[1] != 71) {
+            return false; 
+        }
+
+        // Чтение данных FlatBuffers со смещением в 2 байта
+        auto fb_level = GameData::GetLevel(buffer.data() + 2);
+        auto fb_maps = fb_level->maps();
+
+        maps.resize(fb_maps->size());
+
+        for (flatbuffers::uoffset_t m = 0; m < fb_maps->size(); ++m) {
+            auto fb_map = fb_maps->Get(m);
+            auto& game_map = maps[m];
+
+            game_map.width = static_cast<uint16_t>(fb_map->width());
+            game_map.height = static_cast<uint16_t>(fb_map->height());
+
+            // ИСПРАВЛЕНО: Добавлен вызов функции .data() для получения сырого указателя из FlatBuffers
+            auto fb_blocks = fb_map->map(); 
+            game_map.map.resize(fb_blocks->size());
+            std::memcpy(game_map.map.data(), fb_blocks->data(), fb_blocks->size() * sizeof(GameData::Block));
+
+            // Восстановление массива сложных данных
+            auto fb_complex = fb_map->blocks_data(); 
+            game_map.blocks_data.resize(fb_complex->size());
+            
+            for (flatbuffers::uoffset_t i = 0; i < fb_complex->size(); ++i) {
+                auto fb_sub_array = fb_complex->Get(i)->data();
+                game_map.blocks_data[i].resize(fb_sub_array->size());
+                
+                // ИСПРАВЛЕНО: Явное приведение размера буфера в байтах для стабильной компиляции
+                std::memcpy(game_map.blocks_data[i].data(), fb_sub_array->data(), fb_sub_array->size() * sizeof(int32_t));
+            }
+        }
+        return true;
     }
 };
 

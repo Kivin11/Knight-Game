@@ -1,0 +1,28 @@
+namespace GameData;
+
+// Структура одного Блока (занимает ровно 4 байта)
+struct Block {
+  id: ushort;          // ushort во FlatBuffers генерирует uint16_t в C++
+  index: ushort;       // Индекс в массиве сложных данных (uint16_t)
+}
+
+// Обертка для динамического подмассива сложных данных
+table ComplexSubArray {
+  data: [int];         // int во FlatBuffers генерирует int32_t в C++
+}
+
+// Структура Карты (Map)
+table Map {
+  width: ushort;       // Переведено на ushort (uint16_t в C++)
+  height: ushort;      // Переведено на ushort (uint16_t в C++)
+  map: [Block];        // Ваша матрица блоков (массив структур)
+  blocks_data: [ComplexSubArray]; // Массив сложных данных
+}
+
+// Корневой объект Уровня (Level)
+table Level {
+  maps: [Map];         // Вектор ваших карт
+}
+
+root_type Level;
+file_identifier "KGbV";
